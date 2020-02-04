@@ -1,4 +1,13 @@
 from flask import Flask, render_template
+import json
+
+with open('teachers.json', 'r', encoding='utf-8') as f:
+    teachers_info = f.read()
+teachers_list = json.loads(teachers_info)
+
+with open('goals.json', 'r', encoding='utf-8') as v:
+    goals_info = v.read()
+goals_list = json.loads(goals_info)
 
 app = Flask(__name__)
 
@@ -10,9 +19,22 @@ def index():
 def goals(goal):
     return render_template('goal.html')
 
-@app.route('/profiles/<teacher_id>/')
+@app.route('/profiles/<int:teacher_id>/')
 def teachers(teacher_id):
-    return render_template('profile.html')
+    for prepod in teachers_list:
+        if prepod['id'] == teacher_id:
+            name = prepod['name']
+            rating = prepod['rating']
+            price = prepod['price']
+            about = prepod['about']
+            picture = prepod['picture']
+            for_goals = prepod['goals']
+    teacher_goals = []
+    for x in goals_list:
+        if x in for_goals:
+            teacher_goals += [goals_list[x]]
+    return render_template('profile.html', name=name, rating=rating, price=price, about=about, picture=picture,
+                           teacher_goals=teacher_goals)
 
 @app.route('/request/')
 def request():
@@ -22,7 +44,7 @@ def request():
 def done():
     return render_template('request_done.html')
 
-@app.route('/booking/<teacher_id>/')
+@app.route('/booking/<teacher_id>/<aday>/<atime>/')
 def book(teacher_id):
     return render_template('booking.html')
 
