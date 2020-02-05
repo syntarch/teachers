@@ -42,7 +42,7 @@
               {% for goal in teacher_goals %}
               <p><span class="badge badge-secondary mr-2">{{goal}} </span></p>
               {% endfor %}
-              <p>{{ rating }} Ставка: {{ price }} / час</p>
+              <p>Рейтинг: {{ rating }} Ставка: {{ price }} Р/ час</p>
               <p>{{ about }}</p>
 
             </section>
@@ -51,27 +51,17 @@
 
               <h4 class="mb-4 mt-5">Записаться на пробный урок</h4>
 
-              <h6 class="mt-4">Понедельник</h6>
-              <a href="#" class="btn btn-outline-success mr-2">12:00 свободно</a>
-              <a href="#" class="btn btn-outline-success  mr-2">14:00 свободно</a>
-
-              <h6 class="mt-4">Вторник</h6>
-              <a href="#" class="btn btn-outline-success  mr-2">14:00 свободно</a>
-              <a href="#" class="btn btn-outline-success  mr-2">16:00 свободно</a>
-
-              <h6 class="mt-4">Среда</h6>
-              <a href="#" class="btn btn-outline-success  mr-2">14:00 свободно</a>
-              <a href="#" class="btn btn-outline-success  mr-2">16:00 свободно</a>
-              <a href="#" class="btn btn-outline-success  mr-2">18:00 свободно</a>
-
-              <h6 class="mt-4">Четверг</h6>
-
-              <p>Нет свободных уроков</p>
-
-              <h6 class="mt-4">Пятница</h6>
-              <a href="#" class="btn btn-outline-success  mr-2">14:00 свободно</a>
-              <a href="#" class="btn btn-outline-success  mr-2">16:00 свободно</a>
-              <a href="#" class="btn btn-outline-success  mr-2">18:00 свободно</a>
+              {% for day in schedule %}
+                <h6 class="mt-4">{{ week[day] }}</h6>
+                {% set current_day = schedule[day] %}
+                  {% if current_day|length != 0 %}
+                    {% for time in current_day %}
+                      <a href="#" class="btn btn-outline-success mr-2">{{ time }} свободно</a>
+                    {% endfor %}
+                  {% else %}
+                    <p>Нет свободных уровков</p>>
+                  {% endif %}
+              {% endfor %}
 
             </section>
 
