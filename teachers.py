@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 import json
 
 with open('teachers.json', 'r', encoding='utf-8') as f:
@@ -8,6 +8,7 @@ teachers_list = json.loads(teachers_info)
 with open('goals.json', 'r', encoding='utf-8') as v:
     goals_info = v.read()
 goals_list = json.loads(goals_info)
+
 
 app = Flask(__name__)
 
@@ -43,22 +44,28 @@ def teachers(teacher_id):
     week = {'mon': 'Понедельник', 'tue': 'Вторник', 'wed': 'Среда', 'thu': 'Четверг', 'fri': 'Пятница', 'sat': 'Суббота',
             'sun': 'Воскресенье'}
     return render_template('profile.html', name=name, rating=rating, price=price, about=about, picture=picture,
-                           teacher_goals=teacher_goals, schedule=time_available, week=week)
+                           teacher_goals=teacher_goals, schedule=time_available, week=week, id=teacher_id)
 
-@app.route('/request/')
-def request():
-    return render_template('request.html')
+@app.route('/my_request/')
+def my_request():
+    return render_template('lesson_request.html')
 
 @app.route('/request_done/')
 def done():
     return render_template('request_done.html')
 
-@app.route('/booking/<teacher_id>/<aday>/<atime>/')
-def book(teacher_id):
-    return render_template('booking.html')
+@app.route('/booking/<int:teacher_id>/<aday>/<atime>/')
+def book(teacher_id, aday, atime):
+    for prepod in teachers_list:
+        if prepod['id'] == teacher_id:
+            name = prepod['name']
+
+    return render_template('booking.html', name=name, day=aday, time=atime)
+
 
 @app.route('/booking_done/')
 def book_done():
     return render_template('booking_done.html')
 
-app.run()
+
+app.run(debug=True)
