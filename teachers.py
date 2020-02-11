@@ -60,12 +60,29 @@ def book(teacher_id, aday, atime):
         if prepod['id'] == teacher_id:
             name = prepod['name']
 
-    return render_template('booking.html', name=name, day=aday, time=atime)
+    return render_template('booking.html', name=name, day=aday, time=atime, id=teacher_id)
 
 
-@app.route('/booking_done/')
+@app.route('/booking_done/', methods=['GET'])
 def book_done():
-    return render_template('booking_done.html')
+    weekday = request.args['clientWeekday']
+    time = request.args['clientTime']
+    teacher = request.args['clientTeacher']
+    client_name = request.args['clientName']
+    phone = request.args['clientPhone']
+    new_booking = {'clientWeekday': weekday, 'clientTime': time, 'clientTeacher': teacher,
+                   'clientName': client_name, 'clientPhone': phone}
+
+    with open('booking.json', 'r', encoding='utf-8') as bk:
+        booking_list_json = bk.read()
+    booking_list = json.loads(booking_list_json)
+    booking_list += [new_booking]
+    booking_list_json = json.dumps(booking_list)
+    with open('booking.json', 'w', encoding='utf-8') as bkng:
+        bkng.write(booking_list_json)
+
+    return render_template('booking_done.html',
+                           day=weekday, time=time, name=client_name, phone=phone, teacher=teacher)
 
 
 app.run(debug=True)
