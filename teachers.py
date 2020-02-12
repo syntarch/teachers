@@ -46,13 +46,27 @@ def teachers(teacher_id):
     return render_template('profile.html', name=name, rating=rating, price=price, about=about, picture=picture,
                            teacher_goals=teacher_goals, schedule=time_available, week=week, id=teacher_id)
 
-@app.route('/my_request/')
+@app.route('/request/')
 def my_request():
-    return render_template('lesson_request.html')
+    return render_template('request.html')
 
-@app.route('/request_done/')
+@app.route('/request_done/', methods=['GET'])
 def done():
-    return render_template('request_done.html')
+    goal_en = request.args['goal']
+    learn_time = request.args['time']
+    name = request.args['name']
+    phone = request.args['phone']
+    goals_dict = {'travel': 'Для путешествий', 'learn': 'Для школы', 'work': 'Для работы', 'move': 'Для переезда'}
+    goal_ru = goals_dict[goal_en]
+    new_student = {'goal': goal_ru, 'time': learn_time, 'name': name, 'phone': phone}
+    with open('request.json', 'r', encoding='utf-8') as rqr:
+        request_list_json = rqr.read()
+    request_list = json.loads(request_list_json)
+    request_list += [new_student]
+    request_list_json = json.dumps(request_list)
+    with open('request.json', 'w', encoding='utf-8') as rqw:
+        rqw.write(request_list_json)
+    return render_template('request_done.html', goal=goal_ru, time=learn_time, name=name, phone=phone)
 
 @app.route('/booking/<int:teacher_id>/<aday>/<atime>/')
 def book(teacher_id, aday, atime):
