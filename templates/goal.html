@@ -10,7 +10,7 @@
 <body>
   <header class="container mt-3">
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
-      <a class="navbar-brand" href="#">TINYSTEPS</a>
+      <a class="navbar-brand" href="/">TINYSTEPS</a>
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -30,47 +30,27 @@
     </nav>
   </header>
   <main class="container mt-3">
-    <h1 class="h1 text-center w-50 mx-auto mt-1 py-5 mb-4"><strong>🚜<br />Преподаватели <br>  для переезда</strong></h1>
+    <h1 class="h1 text-center w-50 mx-auto mt-1 py-5 mb-4"><strong>🚜<br />Преподаватели <br> {{ goal_ru }}</strong></h1>
 
       <div class="row">
       <div class="col-12 col-lg-10 offset-lg-1 m-auto">
+        {% for teacher in teachers %}
         <div class="card mb-4">
           <div class="card-body">
             <div class="row">
-              <div class="col-3"><img src="../static/pict 1.png" class="img-fluid" alt=""></div>
+              <div class="col-3"><img src="{{ teacher.picture }}" class="img-fluid" alt=""></div>
               <div class="col-9">
-                <p class="float-right">Рейтинг: 4.8 Ставка: 1200 / час</p>
-                <h2 class="h4">Morris Simmmons</h2>
-                <p>Репетитор американского английского языка. Структурированная система обучения. Всем привет! Я предпочитаю называть себя «тренером» английского языка. Мои занятия похожи на тренировки</p>
-                <a href="profile.html" class="btn btn-outline-primary btn-sm mr-3 mb-2">Показать информаци и расписание</a>
+                <p class="float-right">Рейтинг: {{ teacher.rating }} Ставка: {{ teacher.price }} / час</p>
+                <h2 class="h4">{{ teacher.name }}</h2>
+                <p>{{ teacher.about }}</p>
+                <a href="/profiles/{{ teacher.id }}" class="btn btn-outline-primary btn-sm mr-3 mb-2">Показать информаци и расписание</a>
 
               </div>
             </div>
           </div>
         </div>
-        <div class="card mb-4">
-          <div class="card-body">
-            <div class="row">
-              <div class="col-3"><img src="../static/pict 2.png" class="img-fluid" alt=""></div>
-              <div class="col-9">
-                <p class="float-right">Рейтинг: 4.8 Ставка: 900 / час</p>
-                <h2 class="h4">Julie Nguyen</h2>
-                <p>Сертифицированный репетитор IELTS. Являюсь сертифицировнным CELTA преподавателем английского языка, проживающим за границей. Опыт работы в сфере преподавания - 9 лет.</p>
-                <a href="#" class="btn btn-outline-primary btn-sm mr-3 mb-2">Показать информаци и расписание</a>
+        {% endfor %}
 
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="card mb-4">
-          <div class="card-body">
-            <div class="row">
-              <div class="col-3"><img src="../static/pict 3.png" class="img-fluid" alt=""></div>
-              <div class="col-9">
-                <p class="float-right">Рейтинг: 4.8 Ставка: 1300 / час</p>
-                <h2 class="h4">Wendy Edwards</h2>
-                <p>Молодой и современный репетитор и переводчик с четырёхлетним опытом работы репетиторства Индивидуальные занятия по скайпу, которые ведёт молодой специалист отделения "Перевода </p>
-                <a href="#" class="btn btn-outline-primary btn-sm mr-3 mb-2">Показать информаци и расписание</a>
 
               </div>
             </div>
