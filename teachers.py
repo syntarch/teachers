@@ -108,4 +108,5 @@ def book_done():
                            day=weekday, time=time, name=client_name, phone=phone, teacher=teacher)
 
 
-app.run(debug=True)
+if __name__ == '__main__':
+    app.run()
