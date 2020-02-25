@@ -17,6 +17,10 @@ def index():
     random_teachers = random.sample(teachers_list, 6)
     return render_template('index.html', random_teachers=random_teachers)
 
+@app.route('/all_teachers')
+def all_teachers():
+    return render_template('all_teachers.html', teachers=teachers_list)
+
 @app.route('/goals/<goal>/')
 def goals(goal):
     goal_ru = goals_list[goal]
