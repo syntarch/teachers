@@ -4,7 +4,11 @@ import json
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
 
+from flask_wtf import FlaskForm
+from wtforms import StringField, HiddenField
+
 app = Flask(__name__)
+app.secret_key = 'CSRF_will_be_stopped'
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///project.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -41,6 +45,15 @@ class Book(db.Model):
     client_name = db.Column(db.String())
     client_phone = db.Column(db.String())
     teacher_id = db.Column(db.Integer, db.ForeignKey('teachers.id'))
+
+
+class BookingForm(FlaskForm):
+    teacher_id = HiddenField()
+    client_time = HiddenField()
+    client_teacher = HiddenField()
+    client_weekday = HiddenField()
+    client_name = StringField('Ваше имя')
+    client_phone = StringField('Номер телефона')
 
 
 db.create_all()
@@ -122,12 +135,8 @@ def done():
 
 @app.route('/booking/<int:teacher_id>/<aday>/<atime>/')
 def book(teacher_id, aday, atime):
-    for prepod in teachers_list:
-        if prepod['id'] == teacher_id:
-            name = prepod['name']
-
-    return render_template('booking.html', name=name, day=aday, time=atime, id=teacher_id)
-
+    teacher_db = db.session.query(Teacher).get_or_404(teacher_id)
+    return render_template('booking.html', name=teacher_db.name, day=aday, time=atime, id=teacher_id)
 
 @app.route('/booking_done/', methods=['GET'])
 def book_done():
@@ -136,20 +145,15 @@ def book_done():
     teacher = request.args['clientTeacher']
     client_name = request.args['clientName']
     phone = request.args['clientPhone']
-    new_booking = {'clientWeekday': weekday, 'clientTime': time, 'clientTeacher': teacher,
-                   'clientName': client_name, 'clientPhone': phone}
-
-    with open('booking.json', 'r', encoding='utf-8') as bk:
-        booking_list_json = bk.read()
-    booking_list = json.loads(booking_list_json)
-    booking_list += [new_booking]
-    booking_list_json = json.dumps(booking_list)
-    with open('booking.json', 'w', encoding='utf-8') as bkng:
-        bkng.write(booking_list_json)
-
+    new_booking = Book(weekday=weekday,
+                       time=time,
+                       client_name=client_name,
+                       client_phone=phone,
+                       teacher_id=teacher)
+    db.session.add(new_booking)
+    db.session.commit()
     return render_template('booking_done.html',
                            day=weekday, time=time, name=client_name, phone=phone, teacher=teacher)
-
 
 if __name__ == '__main__':
     app.run(debug=True)
