@@ -19,6 +19,8 @@ class Teacher(db.Model):
     price = db.Column(db.Integer)
     goals = db.Column(db.String())
     picture = db.Column(db.String())
+    rating = db.Column(db.Float)
+    booking = db.relationship('Book', back_populates='teacher')
 
 
 class Request(db.Model):
@@ -35,9 +37,10 @@ class Book(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     weekday = db.Column(db.String())
     time = db.Column(db.String())
-    teacher = db.Column(db.String())
+    teacher = db.relationship('Teacher', back_populates='booking')
     client_name = db.Column(db.String())
     client_phone = db.Column(db.String())
+    teacher_id = db.Column(db.Integer, db.ForeignKey('teachers.id'))
 
 
 db.create_all()
@@ -55,8 +58,9 @@ goals_list = json.loads(goals_info)
 #     imported_teacher = Teacher(name=teacher['name'],
 #                                about=teacher['about'],
 #                                price=teacher['price'],
-#                                goals=' '.join(teacher['goals']),
-#                                picture=teacher['picture'])
+#                                goals=','.join(teacher['goals']),
+#                                picture=teacher['picture'],
+#                                rating=teacher['rating'])
 #     db.session.add(imported_teacher)
 # db.session.commit()
 
@@ -75,36 +79,29 @@ def all_teachers():
 @app.route('/goals/<goal>/')
 def goals(goal):
     goal_ru = goals_list[goal]
-    appropriate_teachers = [teacher for teacher in teachers_list if goal in teacher['goals']]
-    appropriate_teachers_sorted = sorted(appropriate_teachers, key=lambda k: k['rating'], reverse=True)
-    print(appropriate_teachers_sorted)
-    return render_template('goal.html', goal_ru=goal_ru, teachers=appropriate_teachers_sorted)
+    appropriate_teachers_db = db.session.query(Teacher).filter(Teacher.goals.contains(goal))
+    appropriate_teachers = appropriate_teachers_db.all()
+    return render_template('goal.html', goal_ru=goal_ru, teachers=appropriate_teachers)
 
 @app.route('/profiles/<int:teacher_id>/')
 def teachers(teacher_id):
-    for prepod in teachers_list:
-        if prepod['id'] == teacher_id:
-            name = prepod['name']
-            rating = prepod['rating']
-            price = prepod['price']
-            about = prepod['about']
-            picture = prepod['picture']
-            for_goals = prepod['goals']
-            timetable = prepod['free']
-    teacher_goals = []
+    selected_teacher = db.session.query(Teacher).get_or_404(teacher_id)
+    week = {'mon': 'Понедельник', 'tue': 'Вторник', 'wed': 'Среда', 'thu': 'Четверг', 'fri': 'Пятница',
+            'sat': 'Суббота', 'sun': 'Воскресенье'}
+    for teacher in teachers_list:
+        if teacher['id'] == teacher_id:
+            teacher_schedule = teacher['free']
     time_available = {}
-    for day, times in timetable.items():
+    for day, times in teacher_schedule.items():
         time_available[day] = {}
         for time, status in times.items():
             if status is True:
                 time_available[day][time] = True
-    for x in goals_list:
-        if x in for_goals:
-            teacher_goals += [goals_list[x]]
-    week = {'mon': 'Понедельник', 'tue': 'Вторник', 'wed': 'Среда', 'thu': 'Четверг', 'fri': 'Пятница', 'sat': 'Суббота',
-            'sun': 'Воскресенье'}
-    return render_template('profile.html', name=name, rating=rating, price=price, about=about, picture=picture,
-                           teacher_goals=teacher_goals, schedule=time_available, week=week, id=teacher_id)
+    return render_template('profile.html',
+                           name=selected_teacher.name, rating=selected_teacher.rating,
+                           price=selected_teacher.price, about=selected_teacher.about, picture=selected_teacher.picture,
+                           teacher_goals=selected_teacher.goals, id=selected_teacher.id, week=week,
+                           schedule=time_available)
 
 @app.route('/request/')
 def my_request():

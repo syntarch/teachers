@@ -11,9 +11,9 @@
             <section class="teacher=info">
 
               <h1 class="h2">{{ name }}</h1>
-              {% for goal in teacher_goals %}
-              <p><span class="badge badge-secondary mr-2">{{goal}} </span></p>
-              {% endfor %}
+
+              <p><span class="badge badge-secondary mr-2">{{ teacher_goals }} </span></p>
+
               <p>Рейтинг: {{ rating }} Ставка: {{ price }} Р/ час</p>
               <p>{{ about }}</p>
 
