@@ -1,5 +1,46 @@
 from flask import Flask, render_template, request
-import json, random
+import json
+
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import func
+
+app = Flask(__name__)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///project.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+
+class Teacher(db.Model):
+    __tablename__ = 'teachers'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String())
+    about = db.Column(db.String())
+    price = db.Column(db.Integer)
+    goals = db.Column(db.String())
+    picture = db.Column(db.String())
+
+
+class Request(db.Model):
+    __tablename__ = 'requests'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String())
+    phone = db.Column(db.String())
+    goal = db.Column(db.String())
+    time_to_learn = db.Column(db.String())
+
+
+class Book(db.Model):
+    __tablename__ = 'bookings'
+    id = db.Column(db.Integer, primary_key=True)
+    weekday = db.Column(db.String())
+    time = db.Column(db.String())
+    teacher = db.Column(db.String())
+    client_name = db.Column(db.String())
+    client_phone = db.Column(db.String())
+
+
+db.create_all()
 
 with open('teachers.json', 'r', encoding='utf-8') as f:
     teachers_info = f.read()
@@ -9,17 +50,27 @@ with open('goals.json', 'r', encoding='utf-8') as v:
     goals_info = v.read()
 goals_list = json.loads(goals_info)
 
+#this block fill the db with the teachers data
+# for teacher in teachers_list:
+#     imported_teacher = Teacher(name=teacher['name'],
+#                                about=teacher['about'],
+#                                price=teacher['price'],
+#                                goals=' '.join(teacher['goals']),
+#                                picture=teacher['picture'])
+#     db.session.add(imported_teacher)
+# db.session.commit()
 
-app = Flask(__name__)
 
 @app.route('/')
 def index():
-    random_teachers = random.sample(teachers_list, 6)
-    return render_template('index.html', random_teachers=random_teachers)
+    random_teachers_db_1 = db.session.query(Teacher).order_by(func.random()).limit(6)
+    random_teachers_db_2 = random_teachers_db_1.all()
+    return render_template('index.html', random_teachers=random_teachers_db_2)
 
 @app.route('/all_teachers')
 def all_teachers():
-    return render_template('all_teachers.html', teachers=teachers_list)
+    all_teachers_from_db = db.session.query(Teacher).all()
+    return render_template('all_teachers.html', teachers=all_teachers_from_db)
 
 @app.route('/goals/<goal>/')
 def goals(goal):
@@ -67,14 +118,9 @@ def done():
     phone = request.args['phone']
     goals_dict = {'travel': 'Для путешествий', 'learn': 'Для школы', 'work': 'Для работы', 'move': 'Для переезда'}
     goal_ru = goals_dict[goal_en]
-    new_student = {'goal': goal_ru, 'time': learn_time, 'name': name, 'phone': phone}
-    with open('request.json', 'r', encoding='utf-8') as rqr:
-        request_list_json = rqr.read()
-    request_list = json.loads(request_list_json)
-    request_list += [new_student]
-    request_list_json = json.dumps(request_list)
-    with open('request.json', 'w', encoding='utf-8') as rqw:
-        rqw.write(request_list_json)
+    request_for_db = Request(name=name, phone=phone, goal=goal_en, time_to_learn=learn_time)
+    db.session.add(request_for_db)
+    db.session.commit()
     return render_template('request_done.html', goal=goal_ru, time=learn_time, name=name, phone=phone)
 
 @app.route('/booking/<int:teacher_id>/<aday>/<atime>/')
@@ -109,4 +155,4 @@ def book_done():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
