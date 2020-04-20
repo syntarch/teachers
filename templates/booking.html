@@ -4,7 +4,7 @@
   <main class="container mt-3">
     <div class="row mt-5">
       <div class="col-10 col-md-6 offset-1 offset-md-3 mb-3">
-        <form action="/booking_done/" class="card mb-3" method="get">
+        <form action=" {{ url_for('book', teacher_id=1, aday=2, atime=3) }}" class="card mb-3" method="POST">
           <div class="card-body text-center pt-5">
             <img src="../static/pict 1.png" class="mb-3" width="95" alt="">
             <h2 class="h5 card-title mt-2 mb-2">{{ name }}</h2>
@@ -14,16 +14,18 @@
           <hr />
           <div class="card-body mx-3">
               <div class="row">
-                  <input class="form-control" type="hidden" name="clientWeekday" value={{ day }}>
-                  <input class="form-control" type="hidden" name="clientTime" value= {{ time }}>
-                  <input class="form-control" type="hidden" name="clientTeacher" value={{ id }}>
+                  {{ form.csrf_token }}
+                  {{ form.teacher_id(value=id) }}
+                  {{ form.client_weekday(value=day) }}
+                  {{ form.client_time(value=time) }}
+                  {{ form.client_teacher(value=name) }}
               </div>
 
-            <label class="mb-1 mt-2" for="clientName">Вас зовут</label>
-            <input class="form-control" type="text" name="clientName" id="clientName">
+            <p>{{ form.client_name.label }}
+            {{ form.client_name }}</p>
 
-            <label class="mb-1 mt-2" for="clientPhone">Ваш телефон</label>
-            <input class="form-control" type="tel"  name="clientPhone" id="clientPhone">
+            <p>{{ form.client_phone.label }}
+            {{ form.client_phone }}</p>
 
             <input type="submit" class="btn btn-primary btn-block mt-4" value="Записаться на пробный урок">
 

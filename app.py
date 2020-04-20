@@ -5,7 +5,8 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, HiddenField
+from wtforms import StringField, HiddenField, SubmitField
+from wtforms.validators import InputRequired
 
 app = Flask(__name__)
 app.secret_key = 'CSRF_will_be_stopped'
@@ -39,21 +40,23 @@ class Request(db.Model):
 class Book(db.Model):
     __tablename__ = 'bookings'
     id = db.Column(db.Integer, primary_key=True)
-    weekday = db.Column(db.String())
-    time = db.Column(db.String())
-    teacher = db.relationship('Teacher', back_populates='booking')
     client_name = db.Column(db.String())
     client_phone = db.Column(db.String())
+    client_weekday = db.Column(db.String())
+    client_time = db.Column(db.String())
     teacher_id = db.Column(db.Integer, db.ForeignKey('teachers.id'))
+    client_teacher = db.Column(db.String())
+    teacher = db.relationship('Teacher', back_populates='booking')
 
 
 class BookingForm(FlaskForm):
-    teacher_id = HiddenField()
-    client_time = HiddenField()
-    client_teacher = HiddenField()
+    client_name = StringField('Ваше имя', [InputRequired(message='Поле не может быть пустым')])
+    client_phone = StringField('Номер телефона', [InputRequired(message='Поле не может быть пустым')])
     client_weekday = HiddenField()
-    client_name = StringField('Ваше имя')
-    client_phone = StringField('Номер телефона')
+    client_time = HiddenField()
+    teacher_id = HiddenField()
+    client_teacher = HiddenField()
+    submit = SubmitField('Поехали формы!')
 
 
 db.create_all()
@@ -66,7 +69,7 @@ with open('goals.json', 'r', encoding='utf-8') as v:
     goals_info = v.read()
 goals_list = json.loads(goals_info)
 
-#this block fill the db with the teachers data
+#this block fills the db with the teachers data
 # for teacher in teachers_list:
 #     imported_teacher = Teacher(name=teacher['name'],
 #                                about=teacher['about'],
@@ -133,27 +136,35 @@ def done():
     db.session.commit()
     return render_template('request_done.html', goal=goal_ru, time=learn_time, name=name, phone=phone)
 
-@app.route('/booking/<int:teacher_id>/<aday>/<atime>/')
+@app.route('/booking/<int:teacher_id>/<aday>/<atime>/', methods=['GET', 'POST'])
+@app.route('/booking_done/', methods=['POST'])
 def book(teacher_id, aday, atime):
-    teacher_db = db.session.query(Teacher).get_or_404(teacher_id)
-    return render_template('booking.html', name=teacher_db.name, day=aday, time=atime, id=teacher_id)
+    form = BookingForm()
+    if request.method == 'POST' and form.validate_on_submit():
+        client_name = form.client_name.data
+        client_phone = form.client_phone.data
+        client_weekday = form.client_weekday.data
+        client_time = form.client_time.data
+        teacher_id = form.teacher_id.data
+        client_teacher = form.client_teacher.data
+        new_booking = Book(client_weekday=client_weekday,
+                           client_time=client_time,
+                           client_name=client_name,
+                           client_phone=client_phone,
+                           teacher_id=teacher_id,
+                           client_teacher=client_teacher)
+        db.session.add(new_booking)
+        db.session.commit()
+        return render_template('booking_done.html',
+                           day=client_weekday,
+                           time=client_time,
+                           name=client_name,
+                           phone=client_phone,
+                           teacher=client_teacher)
+    else:
+        teacher_db = db.session.query(Teacher).get_or_404(teacher_id)
+        return render_template('booking.html', name=teacher_db.name, day=aday, time=atime, id=teacher_id, form=form)
 
-@app.route('/booking_done/', methods=['GET'])
-def book_done():
-    weekday = request.args['clientWeekday']
-    time = request.args['clientTime']
-    teacher = request.args['clientTeacher']
-    client_name = request.args['clientName']
-    phone = request.args['clientPhone']
-    new_booking = Book(weekday=weekday,
-                       time=time,
-                       client_name=client_name,
-                       client_phone=phone,
-                       teacher_id=teacher)
-    db.session.add(new_booking)
-    db.session.commit()
-    return render_template('booking_done.html',
-                           day=weekday, time=time, name=client_name, phone=phone, teacher=teacher)
 
 if __name__ == '__main__':
     app.run(debug=True)
