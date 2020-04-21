@@ -5,12 +5,11 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, HiddenField, SubmitField
+from wtforms import StringField, HiddenField, SubmitField,RadioField
 from wtforms.validators import InputRequired
 
 app = Flask(__name__)
 app.secret_key = 'CSRF_will_be_stopped'
-
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///project.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
@@ -31,10 +30,26 @@ class Teacher(db.Model):
 class Request(db.Model):
     __tablename__ = 'requests'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String())
-    phone = db.Column(db.String())
-    goal = db.Column(db.String())
+    client_name = db.Column(db.String())
+    client_phone = db.Column(db.String())
+    client_goal = db.Column(db.String())
     time_to_learn = db.Column(db.String())
+
+
+class RequestForm(FlaskForm):
+    client_name = StringField('Ваше имя', [InputRequired(message='Поле не может быть пустым')])
+    client_phone = StringField('Ваш номер телефона', [InputRequired(message='Поле не может быть пустым')])
+    client_goal = RadioField('Ваша цель',
+                             choices=[('travel', 'Для путешествий'),
+                                      ('work', 'Для работы'),
+                                      ('learn', 'Для школы'),
+                                      ('move', 'Для переезда')])
+    client_time_to_learn = RadioField('Сколько времени есть?',
+                                      choices=[('1-2', '1-2 часа в неделю'),
+                                               ('3-5', '3-5 часов в неделю'),
+                                               ('5-7', '5-7 часов в неделю'),
+                                               ('7-10', '7-10 часов в неделю')])
+    submit = SubmitField('Отправить запрос')
 
 
 class Book(db.Model):
@@ -56,7 +71,7 @@ class BookingForm(FlaskForm):
     client_time = HiddenField()
     teacher_id = HiddenField()
     client_teacher = HiddenField()
-    submit = SubmitField('Поехали формы!')
+    submit = SubmitField('Забронировать урок')
 
 
 db.create_all()
@@ -64,17 +79,24 @@ db.create_all()
 with open('teachers.json', 'r', encoding='utf-8') as f:
     teachers_info = f.read()
 teachers_list = json.loads(teachers_info)
+all_teachers_schedule = {}
+for teacher in teachers_list:
+    teacher_id = teacher['id']
+    timetable = teacher['free']
+    all_teachers_schedule[teacher_id] = timetable
 
 with open('goals.json', 'r', encoding='utf-8') as v:
     goals_info = v.read()
 goals_list = json.loads(goals_info)
 
-#this block fills the db with the teachers data
+
+# this block fills the db with the teachers data
 # for teacher in teachers_list:
+#     print(teacher['id'])
 #     imported_teacher = Teacher(name=teacher['name'],
 #                                about=teacher['about'],
 #                                price=teacher['price'],
-#                                goals=','.join(teacher['goals']),
+#                                goals=', '.join(teacher['goals']),
 #                                picture=teacher['picture'],
 #                                rating=teacher['rating'])
 #     db.session.add(imported_teacher)
@@ -104,11 +126,9 @@ def teachers(teacher_id):
     selected_teacher = db.session.query(Teacher).get_or_404(teacher_id)
     week = {'mon': 'Понедельник', 'tue': 'Вторник', 'wed': 'Среда', 'thu': 'Четверг', 'fri': 'Пятница',
             'sat': 'Суббота', 'sun': 'Воскресенье'}
-    for teacher in teachers_list:
-        if teacher['id'] == teacher_id:
-            teacher_schedule = teacher['free']
+    selected_teacher_schedule = all_teachers_schedule[teacher_id]
     time_available = {}
-    for day, times in teacher_schedule.items():
+    for day, times in selected_teacher_schedule.items():
         time_available[day] = {}
         for time, status in times.items():
             if status is True:
@@ -119,22 +139,31 @@ def teachers(teacher_id):
                            teacher_goals=selected_teacher.goals, id=selected_teacher.id, week=week,
                            schedule=time_available)
 
-@app.route('/request/')
-def my_request():
-    return render_template('request.html')
 
-@app.route('/request_done/', methods=['GET'])
-def done():
-    goal_en = request.args['goal']
-    learn_time = request.args['time']
-    name = request.args['name']
-    phone = request.args['phone']
+@app.route('/request/', methods=['GET', 'POST'])
+def client_request():
+    form = RequestForm()
     goals_dict = {'travel': 'Для путешествий', 'learn': 'Для школы', 'work': 'Для работы', 'move': 'Для переезда'}
-    goal_ru = goals_dict[goal_en]
-    request_for_db = Request(name=name, phone=phone, goal=goal_en, time_to_learn=learn_time)
-    db.session.add(request_for_db)
-    db.session.commit()
-    return render_template('request_done.html', goal=goal_ru, time=learn_time, name=name, phone=phone)
+    if request.method == 'POST':                   #if I include the form.validate() here, it always returns False. This point is not clear
+        client_name = form.client_name.data
+        client_phone = form.client_phone.data
+        client_goal = form.client_goal.data
+        client_time_to_learn = form.client_time_to_learn.data
+        goal_ru = goals_dict[client_goal]
+        request_for_db = Request(client_name=client_name,
+                                 client_phone=client_phone,
+                                 client_goal=client_goal,
+                                 time_to_learn=client_time_to_learn)
+        db.session.add(request_for_db)
+        db.session.commit()
+        return render_template('request_done.html',
+                               goal=goal_ru,
+                               time=client_time_to_learn,
+                               name=client_name,
+                               phone=client_phone)
+    else:
+        return render_template('request.html', form=form)
+
 
 @app.route('/booking/<int:teacher_id>/<aday>/<atime>/', methods=['GET', 'POST'])
 @app.route('/booking_done/', methods=['POST'])
